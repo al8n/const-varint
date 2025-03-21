@@ -519,6 +519,7 @@ pub const fn consume_varint(buf: &[u8]) -> Result<usize, DecodeError> {
 
 /// Encode varint error
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, thiserror::Error)]
+#[non_exhaustive]
 pub enum EncodeError {
   /// The buffer does not have enough capacity to encode the value.
   #[error("buffer does not have enough capacity to encode the value")]
@@ -528,6 +529,9 @@ pub enum EncodeError {
     /// The number of bytes remaining in the buffer.
     remaining: usize,
   },
+  /// A custom error message.
+  #[error("{0}")]
+  Custom(&'static str),
 }
 
 impl EncodeError {
@@ -539,10 +543,17 @@ impl EncodeError {
       remaining,
     }
   }
+
+  /// Creates a new `EncodeError::Custom` with the given message.
+  #[inline]
+  pub const fn custom(msg: &'static str) -> Self {
+    Self::Custom(msg)
+  }
 }
 
 /// Decoding varint error.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, thiserror::Error)]
+#[non_exhaustive]
 pub enum DecodeError {
   /// The buffer does not contain a valid LEB128 encoding.
   #[error("value would overflow the target type")]
@@ -550,6 +561,17 @@ pub enum DecodeError {
   /// The buffer does not contain enough data to decode.
   #[error("buffer does not contain enough data to decode a value")]
   Underflow,
+  /// A custom error message.
+  #[error("{0}")]
+  Custom(&'static str),
+}
+
+impl DecodeError {
+  /// Creates a new `DecodeError::Custom` with the given message.
+  #[inline]
+  pub const fn custom(msg: &'static str) -> Self {
+    Self::Custom(msg)
+  }
 }
 
 ///A buffer for storing LEB128 encoded i8 values.
@@ -626,6 +648,8 @@ impl AsRef<[u8]> for I8VarintBuffer {
     self
   }
 }
+
+mod non_zero;
 
 #[cfg(feature = "ruint_1")]
 mod ruint_impl;

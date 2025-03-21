@@ -1,5 +1,11 @@
 # RELEASED
 
+## 0.3.4 (Mar 22nd, 2025)
+
+FEATURES
+
+- Implement `Varint` trait for `NonZero*` types
+
 ## 0.3.3 (Mar 22nd, 2025)
 
 FEATURES

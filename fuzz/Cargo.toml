@@ -32,6 +32,13 @@ doc = false
 bench = false
 
 [[bin]]
+name = "non-zero-varint"
+path = "fuzz_targets/non_zero_varint.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
 name = "ethereum-types"
 path = "fuzz_targets/ethereum_types.rs"
 test = false
