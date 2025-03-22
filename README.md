@@ -21,31 +21,31 @@ Protobuf's varint encoding/decoding with full const context operations supports.
 
 ```toml
 [dependencies]
-const-varint = "0.3"
+const-varint = "0.4"
 ```
 
 - For `u1`, `u2`, `u3`, .., `u127`
 
   ```toml
-  const-varint = { version = "0.3", features = "arbitrary-int" }
+  const-varint = { version = "0.4", features = "arbitrary-int" }
   ```
 
 - For `ruint::Uint<BITS, LBITS>` support (not compatible in `const` context)
 
   ```toml
-  const-varint = { version = "0.3", features = ["ruint"] }
+  const-varint = { version = "0.4", features = ["ruint"] }
   ```
 
 - For `primitive-types` support (not compatible in `const` context)
 
   ```toml
-  const-varint = { version = "0.3", features = ["primitive-types"] }
+  const-varint = { version = "0.4", features = ["primitive-types"] }
   ```
 
 - For `ethereum-types` support (not compatible in `const` context)
 
   ```toml
-  const-varint = { version = "0.3", features = ["ethereum-types"] }
+  const-varint = { version = "0.4", features = ["ethereum-types"] }
   ```
 
 #### License
