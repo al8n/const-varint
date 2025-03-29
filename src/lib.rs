@@ -8,6 +8,10 @@ use core::{num::NonZeroU64, ops::RangeInclusive};
 
 pub use char::*;
 pub use duration::*;
+use utils::zigzag_encode_i64;
+
+/// Utilities for encoding and decoding LEB128 variable length integers.
+pub mod utils;
 
 mod char;
 mod duration;
@@ -264,7 +268,7 @@ macro_rules! encode {
         #[doc = "Encodes an `i" $ty "` value into LEB128 variable length format, and writes it to the buffer."]
         #[inline]
         pub const fn [< encode_ i $ty _varint >](x: [< i $ty >]) -> [< I $ty:camel VarintBuffer >] {
-          let x = (x << 1) ^ (x >> ($ty - 1)); // Zig-zag encoding;
+          let x = utils::[< zigzag_encode_i $ty>](x);
           [< I $ty:camel VarintBuffer >]([< U $ty:camel VarintBuffer >]::new(x as [< u $ty >]).0)
         }
 
@@ -277,10 +281,7 @@ macro_rules! encode {
         #[doc = "Encodes an `i" $ty "` value into LEB128 variable length format, and writes it to the buffer."]
         #[inline]
         pub const fn [< encode_ i $ty _varint_to >](x: [< i $ty >], buf: &mut [u8]) -> Result<usize, EncodeError> {
-          let mut x = {
-            // Zig-zag encoding
-            ((x << 1) ^ (x >> ($ty - 1))) as [< u $ty >]
-          };
+          let mut x = utils::[< zigzag_encode_i $ty>](x);
           encode_varint!(@to_buf [<u $ty>]::buf[x])
         }
       }
@@ -305,7 +306,7 @@ macro_rules! decode {
         pub const fn [< decode_ i $ty _varint >](buf: &[u8]) -> Result<(usize, [< i $ty >]), DecodeError> {
           match [< decode_ u $ty _varint >](buf) {
             Ok((bytes_read, value)) => {
-              let value = ((value >> 1) as [< i $ty >]) ^ { -((value & 1) as [< i $ty >]) }; // Zig-zag decoding
+              let value = utils::[<zigzag_decode_i $ty>](value);
               Ok((bytes_read, value))
             },
             Err(e) => Err(e),
@@ -332,11 +333,7 @@ pub const fn encode_u8_varint_to(mut x: u8, buf: &mut [u8]) -> Result<usize, Enc
 #[doc = "Encodes an `i8` value into LEB128 variable length format, and writes it to the buffer."]
 #[inline]
 pub const fn encode_i8_varint_to(orig: i8, buf: &mut [u8]) -> Result<usize, EncodeError> {
-  let mut n = {
-    // Zig-zag encoding
-    ((orig << 1) ^ (orig >> 7)) as u8
-  };
-
+  let mut n = utils::zigzag_encode_i8(orig);
   let mut i = 0;
 
   while n > 0x7F {
@@ -371,8 +368,8 @@ pub const fn encode_u8_varint(x: u8) -> U8VarintBuffer {
 #[doc = "Encodes an `i8` value into LEB128 variable length format, and writes it to the buffer."]
 #[inline]
 pub const fn encode_i8_varint(x: i8) -> I8VarintBuffer {
-  let x = (x << 1) ^ (x >> (8 - 1)); // Zig-zag encoding;
-  I8VarintBuffer(U8VarintBuffer::new(x as u8).0)
+  let x = utils::zigzag_encode_i8(x);
+  I8VarintBuffer(U8VarintBuffer::new(x).0)
 }
 
 /// A trait for types that can be encoded as variable-length integers (varints).
@@ -446,16 +443,16 @@ pub const fn encoded_u128_varint_len(value: u128) -> usize {
 /// The returned value will be in range [`i128::ENCODED_LEN_RANGE`].
 #[inline]
 pub const fn encoded_i128_varint_len(x: i128) -> usize {
-  let x = (x << 1) ^ (x >> 127); // Zig-zag encoding; // Zig-zag decoding;
-  encoded_u128_varint_len(x as u128)
+  let x = utils::zigzag_encode_i128(x);
+  encoded_u128_varint_len(x)
 }
 
 /// Returns the encoded length of the value in LEB128 variable length format.
 /// The returned value will be in range [`i64::ENCODED_LEN_RANGE`].
 #[inline]
 pub const fn encoded_i64_varint_len(x: i64) -> usize {
-  let x = (x << 1) ^ (x >> 63); // Zig-zag encoding
-  encoded_u64_varint_len(x as u64)
+  let x = zigzag_encode_i64(x);
+  encoded_u64_varint_len(x)
 }
 
 /// Returns the encoded length of the value in LEB128 variable length format.
@@ -482,7 +479,7 @@ pub const fn encoded_u64_varint_len(value: u64) -> usize {
 /// ## Examples
 ///
 /// ```rust
-/// use const_varint::consume_varint;
+/// use varing::consume_varint;
 ///
 /// let buf = [0x96, 0x01]; // Varint encoding of 150
 /// assert_eq!(consume_varint(&buf), Ok(2));
@@ -593,10 +590,7 @@ impl I8VarintBuffer {
     let mut buf = [0; i8::MAX_ENCODED_LEN + 1];
     let mut_buf = &mut buf;
     let len = {
-      let mut n = {
-        // Zig-zag encoding
-        ((val << 1) ^ (val >> 7)) as u8
-      };
+      let mut n = utils::zigzag_encode_i8(val);
 
       let mut i = 0;
       while n > 0x7F {
@@ -656,7 +650,7 @@ mod time_utils;
 
 #[cfg(test)]
 macro_rules! fuzzy {
-  (@const_varint ($($ty:ty$( => $suffix:ident)?), +$(,)?)) => {
+  (@varing ($($ty:ty $( => $suffix:ident)? ), +$(,)?)) => {
     paste::paste! {
       $(
         #[quickcheck_macros::quickcheck]
@@ -682,7 +676,34 @@ macro_rules! fuzzy {
       )*
     }
   };
-  (@const_varint_ref ($($ty:ty$( => $suffix:ident)?), +$(,)?)) => {
+  (@varing_into ($($ty:ident($target:ty) $( => $suffix:ident)? ), +$(,)?)) => {
+    paste::paste! {
+      $(
+        #[quickcheck_macros::quickcheck]
+        fn [< fuzzy_ $ty:snake >](value: $ty) -> bool {
+          let value = ::core::convert::Into::into(value);
+          let encoded = [< encode_ $ty:snake $(_$suffix)? >](value);
+          if encoded.len() != [< encoded_ $ty:snake $(_$suffix)?_len >] (value) || !(encoded.len() <= <$target>::MAX_ENCODED_LEN) {
+            return false;
+          }
+
+          let Ok(consumed) = $crate::consume_varint(&encoded) else {
+            return false;
+          };
+          if consumed != encoded.len() {
+            return false;
+          }
+
+          if let Ok((bytes_read, decoded)) = [< decode_ $ty:snake $(_$suffix)? >](&encoded) {
+            value == decoded && encoded.len() == bytes_read
+          } else {
+            false
+          }
+        }
+      )*
+    }
+  };
+  (@varing_ref ($($ty:ty$( => $suffix:ident)?), +$(,)?)) => {
     paste::paste! {
       $(
         #[quickcheck_macros::quickcheck]
@@ -735,23 +756,52 @@ macro_rules! fuzzy {
       }
     )*
   };
+  (@varint_into ($($ty:ident($target:ty)), +$(,)?)) => {
+    $(
+      paste::paste! {
+        #[quickcheck_macros::quickcheck]
+        fn [< fuzzy_ $ty:snake _varint>](value: $ty) -> bool {
+          let value: $target = ::core::convert::Into::into(value);
+          let mut buf = [0; <$target>::MAX_ENCODED_LEN];
+          let Ok(encoded_len) = value.encode(&mut buf) else { return false; };
+          if encoded_len != value.encoded_len() || !(value.encoded_len() <= <$target>::MAX_ENCODED_LEN) {
+            return false;
+          }
+
+          let Ok(consumed) = $crate::consume_varint(&buf) else {
+            return false;
+          };
+          if consumed != encoded_len {
+            return false;
+          }
+
+          if let Ok((bytes_read, decoded)) = <$target>::decode(&buf) {
+            value == decoded && encoded_len == bytes_read
+          } else {
+            false
+          }
+        }
+      }
+    )*
+  };
 }
 
 mod non_zero;
-
-#[cfg(feature = "ruint_1")]
-mod ruint_impl;
 
 /// LEB128 encoding/decoding for `u1`, `u2` .. `u127`
 #[cfg(feature = "arbitrary-int_1")]
 #[cfg_attr(docsrs, doc(cfg(feature = "arbitrary-int")))]
 pub mod arbitrary_int;
 
-#[cfg(feature = "primitive-types_0_13")]
-mod primitive_types;
+/// LEB128 encoding/decoding for [`num-rational`](https://crates.io/crates/num-rational) types.
+#[cfg(feature = "num-rational_0_4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "num-rational_0_4")))]
+pub mod num_rational;
 
-#[cfg(feature = "ethereum-types_0_15")]
-mod ethereum_types;
+/// LEB128 encoding/decoding for [`num-complex`](https://crates.io/crates/num-complex) types.
+#[cfg(feature = "num-complex_0_4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "num-complex_0_4")))]
+pub mod num_complex;
 
 /// LEB128 encoding/decoding for [`chrono`](https://crates.io/crates/chrono) types.
 #[cfg(feature = "chrono_0_4")]
@@ -762,6 +812,15 @@ pub mod chrono;
 #[cfg(feature = "time_0_3")]
 #[cfg_attr(docsrs, doc(cfg(feature = "time_0_3")))]
 pub mod time;
+
+#[cfg(feature = "ruint_1")]
+mod ruint_impl;
+
+#[cfg(feature = "primitive-types_0_13")]
+mod primitive_types;
+
+#[cfg(feature = "ethereum-types_0_15")]
+mod ethereum_types;
 
 #[cfg(test)]
 mod tests {
@@ -936,7 +995,7 @@ mod tests {
 mod fuzzy {
   use super::*;
 
-  fuzzy!(@const_varint(u8 => varint, u16 => varint, u32 => varint, u64 => varint, u128 => varint, i8 => varint, i16 => varint, i32 => varint, i64 => varint, i128 => varint));
+  fuzzy!(@varing(u8 => varint, u16 => varint, u32 => varint, u64 => varint, u128 => varint, i8 => varint, i16 => varint, i32 => varint, i64 => varint, i128 => varint));
   fuzzy!(@varint(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128));
 
   #[cfg(feature = "std")]

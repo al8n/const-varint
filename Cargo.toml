@@ -1,10 +1,10 @@
 [package]
-name = "const-varint"
+name = "varing"
 version = "0.4.0"
 edition = "2021"
-repository = "https://github.com/al8n/const-varint"
-homepage = "https://github.com/al8n/const-varint"
-documentation = "https://docs.rs/const-varint"
+repository = "https://github.com/al8n/varing"
+homepage = "https://github.com/al8n/varing"
+documentation = "https://docs.rs/varing"
 description = "Protobuf's varint encoding/decoding with full const context operations supports."
 license = "MIT OR Apache-2.0"
 rust-version = "1.81.0"
@@ -23,6 +23,14 @@ ruint = ["ruint_1"]
 
 arbitrary-int_1 = ["dep:arbitrary-int_1"]
 arbitrary-int = ["arbitrary-int_1"]
+
+num-rational_0_4 = ["dep:num-rational_0_4"]
+num-rational = ["num-rational_0_4"]
+
+num-complex_0_4 = ["dep:num-complex_0_4"]
+num-complex = ["num-complex_0_4"]
+
+num-traits = ["ruint_1?/num-traits"]
 
 primitive-types_0_13 = ["dep:primitive-types_0_13", "ruint"]
 primitive-types = ["primitive-types_0_13"]
@@ -47,6 +55,8 @@ time_0_3 = { package = "time", version = "0.3", default-features = false, option
 arbitrary-int_1 = { package = "arbitrary-int", version = "1", default-features = false, optional = true }
 primitive-types_0_13 = { package = "primitive-types", version = "0.13", default-features = false, optional = true }
 ethereum-types_0_15 = { package = "ethereum-types", version = "0.15", default-features = false, optional = true }
+num-rational_0_4 = { package = "num-rational", version = "0.4", default-features = false, optional = true }
+num-complex_0_4 = { package = "num-complex", version = "0.4", default-features = false, optional = true }
 
 
 [dev-dependencies]

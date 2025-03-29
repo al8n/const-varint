@@ -2,8 +2,8 @@
 
 use libfuzzer_sys::fuzz_target;
 
-use const_varint::{consume_varint, Varint};
 use primitive_types::{U128, U256, U512};
+use varing::{consume_varint, Varint};
 
 macro_rules! fuzzy {
     ($($ty:ident), +$(,)?) => {

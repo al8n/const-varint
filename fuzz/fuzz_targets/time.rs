@@ -2,8 +2,8 @@
 
 use ::chrono::{Datelike, Timelike};
 use ::time::{Date, Duration, Month, PrimitiveDateTime, Time, UtcDateTime};
-use const_varint::*;
 use libfuzzer_sys::fuzz_target;
+use varing::*;
 
 macro_rules! fuzzy {
     ($($ty:ty), +$(,)?) => {

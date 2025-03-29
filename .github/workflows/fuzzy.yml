@@ -145,3 +145,57 @@ jobs:
         run: |
           cargo fuzz build
           cargo fuzz run time --features chrono,time -- -max_total_time=300
+
+  fuzz-num-rational:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+          
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz
+
+      - name: Run fuzzing
+        run: |
+          cargo fuzz build
+          cargo fuzz run num-rational --features num-rational,ruint -- -max_total_time=300
+
+  fuzz-num-complex:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+          
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz
+
+      - name: Run fuzzing
+        run: |
+          cargo fuzz build
+          cargo fuzz run num-complex --features num-complex,ruint -- -max_total_time=300
+  
+  fuzz-arbitrary-int:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+          
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz
+
+      - name: Run fuzzing
+        run: |
+          cargo fuzz build
+          cargo fuzz run arbitrary-int --features arbitrary-int -- -max_total_time=300

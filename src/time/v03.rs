@@ -368,6 +368,6 @@ mod tests {
     }
   }
 
-  fuzzy!(@const_varint_ref(Date, Datetime, Time, Utc));
+  fuzzy!(@varing_ref(Date, Datetime, Time, Utc));
   fuzzy!(@varint(Date, PrimitiveDateTime, Time, UtcDateTime));
 }

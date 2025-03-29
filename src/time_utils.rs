@@ -252,8 +252,8 @@ pub(crate) const fn encode_date(year: i32, month: u8, day: u8) -> DateBuffer {
 #[inline]
 pub(crate) const fn secs_and_subsec_nanos_to_merged(secs: i64, nanos: i32) -> u128 {
   // zigzag encode the values
-  let secs = ((secs << 1) ^ (secs >> 63)) as u128;
-  let nanos = ((nanos << 1) ^ (nanos >> 31)) as u128;
+  let secs = super::utils::zigzag_encode_i64(secs) as u128;
+  let nanos = super::utils::zigzag_encode_i32(nanos) as u128;
 
   // Place smallest values in lower bits for LEB128 efficiency
   nanos | (secs << 32)
@@ -266,8 +266,8 @@ pub(crate) const fn merged_to_secs_and_subsec_nanos(merged: u128) -> (i64, i32) 
   let secs_zz = (merged >> 32) as u64;
 
   // 2. ZigZag decode each component
-  let nanos = ((nanos_zz >> 1) as i32) ^ -((nanos_zz & 1) as i32);
-  let secs = ((secs_zz >> 1) as i64) ^ -((secs_zz & 1) as i64);
+  let nanos = super::utils::zigzag_decode_i32(nanos_zz);
+  let secs = super::utils::zigzag_decode_i64(secs_zz);
   (secs, nanos)
 }
 

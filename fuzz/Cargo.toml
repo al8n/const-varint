@@ -1,5 +1,5 @@
 [package]
-name = "const-varint-fuzz"
+name = "varing-fuzz"
 version = "0.0.0"
 publish = false
 edition = "2021"
@@ -8,23 +8,32 @@ edition = "2021"
 cargo-fuzz = true
 
 [features]
-ethereum-types = ["dep:ethereum-types", "const-varint/ethereum-types"]
-primitive-types = ["dep:primitive-types", "const-varint/primitive-types"]
-ruint = ["dep:ruint", "const-varint/ruint"]
-chrono = ["dep:chrono", "const-varint/chrono"]
-time = ["dep:time", "chrono", "const-varint/time"]
+ethereum-types = ["dep:ethereum-types", "varing/ethereum-types"]
+primitive-types = ["dep:primitive-types", "varing/primitive-types"]
+ruint = ["dep:ruint", "varing/ruint"]
+chrono = ["dep:chrono", "varing/chrono"]
+time = ["dep:time", "chrono", "varing/time"]
+arbitrary-int = ["dep:arbitrary-int", "varing/arbitrary-int"]
+num-rational = ["dep:num-rational", "varing/num-rational"]
+num-complex = ["dep:num-complex", "varing/num-complex"]
 
 [dependencies]
 arbitrary = { version = "1", features = ["derive"] }
 libfuzzer-sys = "0.4"
 paste = "1"
+seq-macro = "0.3"
 ethereum-types = { version = "0.15", features = ["arbitrary"], optional = true }
 primitive-types = { version = "0.13", features = ["arbitrary"], optional = true }
-ruint = { version = "1", features = ["arbitrary"], optional = true }
+ruint = { version = "1", features = ["arbitrary", "num-traits"], optional = true }
 chrono = { version = "0.4", optional = true, features = ["arbitrary"] }
 time = { version = "0.3", optional = true, features = ["large-dates"] }
+num-traits = { version = "0.2" }
 
-[dependencies.const-varint]
+arbitrary-int = { version = "1", optional = true }
+num-rational = { version = "0.4", optional = true }
+num-complex = { version = "0.4", optional = true }
+
+[dependencies.varing]
 path = ".."
 
 
@@ -81,3 +90,27 @@ test = false
 doc = false
 bench = false
 required-features = ["time", "chrono"]
+
+[[bin]]
+name = "arbitrary-int"
+path = "fuzz_targets/arbitrary_int.rs"
+test = false
+doc = false
+bench = false
+required-features = ["arbitrary-int"]
+
+[[bin]]
+name = "num-rational"
+path = "fuzz_targets/num_rational.rs"
+test = false
+doc = false
+bench = false
+required-features = ["num-rational", "ruint"]
+
+[[bin]]
+name = "num-complex"
+path = "fuzz_targets/num_complex.rs"
+test = false
+doc = false
+bench = false
+required-features = ["num-complex", "ruint"]

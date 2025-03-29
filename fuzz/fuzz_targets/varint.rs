@@ -1,7 +1,7 @@
 #![no_main]
 
-use const_varint::*;
 use libfuzzer_sys::fuzz_target;
+use varing::*;
 
 macro_rules! fuzzy {
     ($($ty:ty), +$(,)?) => {

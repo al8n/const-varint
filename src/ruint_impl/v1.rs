@@ -125,6 +125,33 @@ impl<const BITS: usize, const LBITS: usize> Varint for Uint<BITS, LBITS> {
   }
 }
 
+#[cfg(any(feature = "num-rational_0_4", feature = "num-complex_0_4"))]
+pub(crate) trait Packable<O> {
+  fn pack(low: Self, high: Self) -> O;
+
+  fn unpack(value: O) -> (Self, Self)
+  where
+    Self: Sized;
+}
+
+#[cfg(any(feature = "num-rational_0_4", feature = "num-complex_0_4"))]
+impl<const BITS: usize, const LIMBS: usize, const OBITS: usize, const OLIMBS: usize>
+  Packable<Uint<OBITS, OLIMBS>> for Uint<BITS, LIMBS>
+{
+  fn pack(low: Self, high: Self) -> Uint<OBITS, OLIMBS> {
+    debug_assert_eq!(BITS * 2, OBITS, "BITS * 2 != OBITS");
+    Uint::<OBITS, OLIMBS>::from(low) | (Uint::<OBITS, OLIMBS>::from(high) << Self::BITS)
+  }
+
+  fn unpack(value: Uint<OBITS, OLIMBS>) -> (Self, Self) {
+    debug_assert_eq!(BITS * 2, OBITS, "BITS * 2 != OBITS");
+
+    let low = value & Uint::<OBITS, OLIMBS>::from(Uint::<BITS, LIMBS>::MAX);
+    let high = (value >> Self::BITS).to::<Uint<BITS, LIMBS>>();
+    (low.to(), high.to())
+  }
+}
+
 #[cfg(test)]
 mod tests_ruint_1 {
   use super::*;

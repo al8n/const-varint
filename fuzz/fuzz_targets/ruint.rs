@@ -2,10 +2,10 @@
 
 use libfuzzer_sys::fuzz_target;
 
-use const_varint::{consume_varint, Varint};
 use ruint::aliases::{
   U0, U1, U1024, U128, U16, U2048, U256, U32, U320, U384, U4096, U448, U512, U64, U768,
 };
+use varing::{consume_varint, Varint};
 
 macro_rules! fuzzy {
     ($($ty:ident), +$(,)?) => {
